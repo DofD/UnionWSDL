@@ -18,42 +18,42 @@ namespace UnionWSDL
                 return;
             }
 
-            var sourceFilename = args[0];
-            string destinationFilename = null;
-            if (args.Length > 1)
-            {
-                destinationFilename = args[1];
-            }
+            var resultFilename = ConfigurationHelper.AppSetting("ResultFileName", "out.wsdl");
 
-            if (Uri.IsWellFormedUriString(sourceFilename, UriKind.Absolute))
+            foreach (var path in args)
             {
-            }
-            else
-            {
-                if (File.Exists(sourceFilename) == false)
+                var wsdlPath = path;
+                if (Uri.IsWellFormedUriString(wsdlPath, UriKind.Absolute))
                 {
-                    Console.WriteLine("Ошибка : .wsdl файл не существует!");
+                    wsdlPath = wsdlPath + "?singleWsdl";
+                }
+                else
+                {
+                    if (File.Exists(wsdlPath) == false)
+                    {
+                        Console.WriteLine("Ошибка : .wsdl файл не существует!");
 
-                    Console.ReadKey();
-                    return;
+                        Console.ReadKey();
+                        return;
+                    }
+
+                    var f = new FileInfo(wsdlPath);
+                    var sourceFilename = f.FullName;
+
+                    if (resultFilename == null)
+                    {
+                        resultFilename = Path.Combine(
+                            Path.GetDirectoryName(sourceFilename),
+                            Path.GetFileNameWithoutExtension(sourceFilename) + "_merged" + Path.GetExtension(sourceFilename));
+                    }
                 }
 
-                var f = new FileInfo(sourceFilename);
-                sourceFilename = f.FullName;
+                Console.WriteLine("Процесс: {0}", wsdlPath);
 
-                if (destinationFilename == null)
-                {
-                    destinationFilename = Path.Combine(
-                        Path.GetDirectoryName(sourceFilename),
-                        Path.GetFileNameWithoutExtension(sourceFilename) + "_merged" + Path.GetExtension(sourceFilename));
-                }
+                CombinerWSDL.Union(wsdlPath, resultFilename);
             }
 
-            Console.WriteLine("Processing: {0}", sourceFilename);
-            Console.WriteLine("Will create: {0}", destinationFilename);
-
-            WSDLMerger.Merge(sourceFilename, destinationFilename);
-
+            Console.WriteLine("Сохранили результат в: {0}", resultFilename);
             Console.ReadKey();
         }
 
